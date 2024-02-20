@@ -7,6 +7,8 @@
 #include <stdarg.h>
 #include <string.h>
 
+static gfx8_display_driver_t *display = NULL;
+
 #ifndef _swap_int16_t
 #define _swap_int16_t(a, b)                                                    \
   {                                                                            \
@@ -37,30 +39,43 @@ static unsigned char cursor_y = 0;
   B = t;                                        \
 }
 
-void G8Lib_Init(unsigned char screen_buffer[]){
-  buffer = screen_buffer;
-  font = GFX8_DEFAULT_FONT;
+void G8Lib_Init(gfx8_display_driver_t *display_driver){
+	display = display_driver;
+
+	if(display == NULL || display->init == NULL || display->get_buffer == NULL){
+		while(1){};
+	}
+
+	display->init();
+	buffer = display->get_buffer();
+	font = GFX8_DEFAULT_FONT;
+}
+
+gfx8_display_driver_t *G8Lib_GetDisplayDrv(void){
+	return display;
 }
 
 void G8Lib_PutPixel(unsigned char x, unsigned char y, gfx8_color_t color){
-    if(x < GFX8_SCREEN_WIDTH && y < GFX8_SCREEN_HEIGHT){
-        switch(color){
-          case GFX8_RESET:
-              buffer[(y>>3)*GFX8_SCREEN_WIDTH + x] &= ~G8LIB_PIXEL_MASK(y&0x07);
-              break;
-          case GFX8_SET:
-              buffer[(y>>3)*GFX8_SCREEN_WIDTH + x] |= G8LIB_PIXEL_MASK(y&0x07);
-              break;
-          case GFX8_ADAPTIVE:
-              buffer[(y>>3)*GFX8_SCREEN_WIDTH + x] ^= G8LIB_PIXEL_MASK(y&0x07);
-              break;
-        }
+    if((x >= display->width) || (y >= display->height)){
+        return;
     }
+
+    switch(color){
+	  case GFX8_RESET:
+		  buffer[(y>>3)*display->width + x] &= ~G8LIB_PIXEL_MASK(y&0x07);
+		  break;
+	  case GFX8_SET:
+		  buffer[(y>>3)*display->width + x] |= G8LIB_PIXEL_MASK(y&0x07);
+		  break;
+	  case GFX8_ADAPTIVE:
+		  buffer[(y>>3)*display->width + x] ^= G8LIB_PIXEL_MASK(y&0x07);
+		  break;
+	}
 }
 
 bool G8Lib_GetPixel(uint8_t x, uint8_t y){
-  if(x < GFX8_SCREEN_WIDTH && y < GFX8_SCREEN_HEIGHT){
-      if((buffer[(y>>3)*GFX8_SCREEN_WIDTH + x] >> (y&0x07)) & 0x01){
+  if(x < display->width && y < display->height){
+      if((buffer[(y>>3)*display->width + x] >> (y&0x07)) & 0x01){
           return true;
       }
   }
@@ -73,8 +88,8 @@ void G8Lib_PutByte(unsigned char x, unsigned char y, unsigned char byte, gfx8_co
   unsigned char offset;
   unsigned short position;
   
-  if(x < GFX8_SCREEN_WIDTH && y < GFX8_SCREEN_HEIGHT){
-    position = (y >> 3) * GFX8_SCREEN_WIDTH + x;
+  if(x < display->width && y < display->height){
+    position = (y >> 3) * display->width + x;
     offset = y & 0x07;
     
     if(offset){
@@ -86,11 +101,11 @@ void G8Lib_PutByte(unsigned char x, unsigned char y, unsigned char byte, gfx8_co
         case GFX8_ADAPTIVE: buffer[position] ^= (unsigned char)tmp; break;
       }
       
-      if(position > SCREEN_BUFFER_SIZE - GFX8_SCREEN_WIDTH){
+      if(position > (display->width * display->height) - display->width){
         return;
       }
       else{
-        position += GFX8_SCREEN_WIDTH;
+        position += display->width;
         tmp >>= 8;
         
         switch(color){
@@ -127,11 +142,11 @@ void G8Lib_PutByte(unsigned char x, unsigned char y, unsigned char byte, gfx8_co
 }
 
 void G8Lib_DrawVLine(unsigned char x, unsigned char y0, unsigned char y1){
-	if(x > GFX8_SCREEN_WIDTH - 1){
+	if(x > display->width - 1){
 		return;
 	}
 
-	if((y0 >= GFX8_SCREEN_HEIGHT) && (y1 >= GFX8_SCREEN_HEIGHT)){
+	if((y0 >= display->height) && (y1 >= display->height)){
 		return;
 	}
 
@@ -151,8 +166,8 @@ void G8Lib_DrawVLine(unsigned char x, unsigned char y0, unsigned char y1){
     	y0 = temp;
 	}
 
-    if(y1 >= GFX8_SCREEN_HEIGHT){
-    	y1 = GFX8_SCREEN_HEIGHT - 1;
+    if(y1 >= display->height){
+    	y1 = display->height - 1;
     }
 
     while(length){
@@ -164,7 +179,7 @@ void G8Lib_DrawVLine(unsigned char x, unsigned char y0, unsigned char y1){
     	}
 
     	/* Draw into segment according to mask & color */
-    	buffer[segment * GFX8_SCREEN_WIDTH + x] |= mask;
+    	buffer[segment * display->width + x] |= mask;
 
     	/* Decrease length */
     	if(y_current + length > ((segment + 1) * 8) || length > 8){
@@ -212,7 +227,7 @@ void G8Lib_DrawDottedVLine(uint8_t y0, uint8_t y1, uint8_t x, uint8_t gap_width,
 }
 
 void G8Lib_DrawHLine(unsigned char x0, unsigned char x1, unsigned char y, gfx8_color_t color){
-    if(x0 < GFX8_SCREEN_WIDTH && y < GFX8_SCREEN_HEIGHT && x1 < GFX8_SCREEN_WIDTH){
+    if(x0 < display->width && y < display->height && x1 < display->width){
         unsigned char tmp0, tmp1;
 
         if(x0 > x1){
@@ -228,15 +243,15 @@ void G8Lib_DrawHLine(unsigned char x0, unsigned char x1, unsigned char y, gfx8_c
         for(; x0 <= x1; x0++){
             switch(color){
                 case GFX8_RESET:
-                    buffer[tmp0 * GFX8_SCREEN_WIDTH + x0] &= ~tmp1;
+                    buffer[tmp0 * display->width + x0] &= ~tmp1;
                     break;
 
                 case GFX8_SET:
-                    buffer[tmp0 * GFX8_SCREEN_WIDTH + x0] |= tmp1;
+                    buffer[tmp0 * display->width + x0] |= tmp1;
                     break;
 
                 case GFX8_ADAPTIVE:
-                    buffer[tmp0 * GFX8_SCREEN_WIDTH + x0] ^= tmp1;
+                    buffer[tmp0 * display->width + x0] ^= tmp1;
                     break;
             }
         }
@@ -244,7 +259,7 @@ void G8Lib_DrawHLine(unsigned char x0, unsigned char x1, unsigned char y, gfx8_c
 }
 
 void G8Lib_DrawDottedHLine(unsigned char x0, unsigned char x1, unsigned char y, uint8_t step_width_px){
-    if(x0 < GFX8_SCREEN_WIDTH && y < GFX8_SCREEN_HEIGHT && x1 < GFX8_SCREEN_WIDTH){
+    if(x0 < display->width && y < display->height && x1 < display->width){
         unsigned char tmp0, tmp1, tmp2;
         uint8_t dotted = 1;
 
@@ -270,17 +285,17 @@ void G8Lib_DrawDottedHLine(unsigned char x0, unsigned char x1, unsigned char y, 
             }
 
             if(dotted){
-                buffer[tmp0 * GFX8_SCREEN_WIDTH + x0] |= tmp1;
+                buffer[tmp0 * display->width + x0] |= tmp1;
             }
             else{
-                buffer[tmp0 * GFX8_SCREEN_WIDTH + x0] &= ~tmp1;
+                buffer[tmp0 * display->width + x0] &= ~tmp1;
             }
         }
     }
 }
 
 void G8Lib_Rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, gfx8_color_t color){
-  if(((x + w) <= GFX8_SCREEN_WIDTH) && ((y + h) <= GFX8_SCREEN_HEIGHT)){
+  if(((x + w) <= display->width) && ((y + h) <= display->height)){
     w = x + w;
     for(uint8_t i = x; i < w; i++){
       G8Lib_DrawVLine(i, y, y + h - 1);
@@ -289,7 +304,7 @@ void G8Lib_Rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, gfx8_color_t color){
 }
 
 void G8Lib_RectNoFill(uint8_t x, uint8_t y, uint8_t w, uint8_t h, gfx8_color_t color){
-	if(((x + w) <= GFX8_SCREEN_WIDTH) && ((y + h) <= GFX8_SCREEN_HEIGHT)){
+	if(((x + w) <= display->width) && ((y + h) <= display->height)){
 		G8Lib_DrawVLine(x, y, y + h - 1);
 		G8Lib_DrawVLine(x + w - 1, y, y + h - 1);
 		G8Lib_DrawHLine(x, x + w - 1, y, color);
@@ -307,7 +322,7 @@ static void gfx8_draw_char(char c, gfx8_color_t color){
     return;
   }
   
-  if (GFX8_SCREEN_WIDTH < (cursor_x + font.width) || GFX8_SCREEN_HEIGHT < (cursor_y + font.height)){
+  if (display->width < (cursor_x + font.width) || display->height < (cursor_y + font.height)){
     return;
   }
   
@@ -404,7 +419,7 @@ void G8Lib_DrawBitmap(unsigned char x, unsigned char y, gfx8_bitmap_t bitmap, gf
   unsigned short bmp_offset;
   uint8_t bitmap_segments;
 
-  if (x > GFX8_SCREEN_WIDTH || y > GFX8_SCREEN_HEIGHT) {
+  if (x > display->width || y > display->height) {
     return;
   }
   

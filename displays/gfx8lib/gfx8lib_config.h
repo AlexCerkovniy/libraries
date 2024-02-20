@@ -4,8 +4,6 @@
 #include <stdint.h>
 
 /* GENERAL LIBRARY OPTIONS */
-#define GFX8_SCREEN_WIDTH                       (128)
-#define GFX8_SCREEN_HEIGHT                      (64)
 #define GFX8_INVERT                             0
 #define GFX8_VA_STRING_BUFFER_SIZE              (64)
 

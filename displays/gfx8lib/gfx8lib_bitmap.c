@@ -35,8 +35,13 @@ const unsigned char backlight_icon_8x5 [] = {
     0x0E, 0x0E, 0x0E, 0x1F, 0x1F, 0x00, 0x11, 0x04
 };
 
+const unsigned char antenna_icon_7x7 [] = {
+    0x01, 0x02, 0x04, 0x7F, 0x04, 0x02, 0x01
+};
+
 const gfx8_bitmap_t mute_icon = {32, 32, mute_icon_32px};
 const gfx8_bitmap_t temperature_icon = {16, 16, temperature_icon_16x16};
 const gfx8_bitmap_t humidity_icon = {16, 16, humidity_icon_16x16};
 const gfx8_bitmap_t co2_icon = {16, 16, co2_icon_16x16};
 const gfx8_bitmap_t backlight_icon = {8, 5, backlight_icon_8x5};
+const gfx8_bitmap_t antenna_icon = {7, 7, antenna_icon_7x7};

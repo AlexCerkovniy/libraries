@@ -7,16 +7,26 @@
 #include "gfx8lib_fonts.h"
 #include "gfx8lib_bitmap.h"
 
-#define SCREEN_BUFFER_SIZE              (GFX8_SCREEN_WIDTH * GFX8_SCREEN_HEIGHT)
-
 typedef enum{
   GFX8_RESET = 0,
   GFX8_SET,
   GFX8_ADAPTIVE
 }gfx8_color_t;
 
+typedef struct{
+	uint16_t height, width;
+	void (*init)(void);
+	void (*clear)(void);
+	void (*draw)(void);
+	uint8_t* (*get_buffer)(void);
+	void (*set_backlight)(bool enabled);
+	bool (*get_backlight)(void);
+	void (*sleep)(bool enabled);
+}gfx8_display_driver_t;
+
 /* LIBRARY API */
-void G8Lib_Init(unsigned char screen_buffer[]);
+void G8Lib_Init(gfx8_display_driver_t *display_driver);
+gfx8_display_driver_t *G8Lib_GetDisplayDrv(void);
 
 /* BASIC */
 void G8Lib_PutPixel(unsigned char x, unsigned char y, gfx8_color_t color);
