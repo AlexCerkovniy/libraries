@@ -1,0 +1,97 @@
+#include "pcd8544_84x48_port.h"
+#include "delay.h"
+
+#define PCD8544_RST_Port                    GPIOD                   
+#define PCD8544_RST_Pin                     GPIO_Pin_0
+
+#define PCD8544_CS_Port                     GPIOD     
+#define PCD8544_CS_Pin                      GPIO_Pin_1
+
+#define PCD8544_DC_Port                     GPIOD     
+#define PCD8544_DC_Pin                      GPIO_Pin_2
+
+#define PCD8544_MOSI_Port                   GPIOD     
+#define PCD8544_MOSI_Pin                    GPIO_Pin_3
+
+#define PCD8544_CLK_Port                    GPIOD     
+#define PCD8544_CLK_Pin                     GPIO_Pin_4
+
+#define PCD8544_VCC_Port                    GPIOD     
+#define PCD8544_VCC_Pin                     GPIO_Pin_5
+
+#define PCD8544_BK_Port                     GPIOD                   
+#define PCD8544_BK_Pin                      GPIO_Pin_6
+
+#define PCD8544_GND_Port                    GPIOD     
+#define PCD8544_GND_Pin                     GPIO_Pin_7
+
+void PCD8544_PL_Init(void){
+  GPIO_Init(PCD8544_GND_Port, PCD8544_GND_Pin, GPIO_Mode_Out_PP_Low_Slow);
+  GPIO_Init(PCD8544_VCC_Port, PCD8544_VCC_Pin, GPIO_Mode_Out_PP_High_Slow);
+  
+  GPIO_Init(PCD8544_RST_Port, PCD8544_RST_Pin, GPIO_Mode_Out_PP_High_Slow);
+  GPIO_Init(PCD8544_BK_Port, PCD8544_BK_Pin, GPIO_Mode_Out_PP_Low_Slow);
+  GPIO_Init(PCD8544_CS_Port, PCD8544_CS_Pin, GPIO_Mode_Out_PP_High_Slow);
+  GPIO_Init(PCD8544_DC_Port, PCD8544_DC_Pin, GPIO_Mode_Out_PP_High_Slow);
+  GPIO_Init(PCD8544_MOSI_Port, PCD8544_MOSI_Pin, GPIO_Mode_Out_PP_Low_Fast);
+  GPIO_Init(PCD8544_CLK_Port, PCD8544_CLK_Pin, GPIO_Mode_Out_PP_Low_Fast);
+}                                            
+
+void PCD8544_PL_ResetPin(bool state){
+  if(state){
+    PCD8544_RST_Port->ODR |= PCD8544_RST_Pin;
+  }
+  else{
+    PCD8544_RST_Port->ODR &= ~PCD8544_RST_Pin;
+  }
+}
+
+void PCD8544_PL_NssPin(bool state){
+  if(state){
+    PCD8544_CS_Port->ODR |= PCD8544_CS_Pin;
+  }
+  else{
+    PCD8544_CS_Port->ODR &= ~PCD8544_CS_Pin;
+  }
+}
+
+void PCD8544_PL_DataCommandPin(bool state){
+  if(state){
+    PCD8544_DC_Port->ODR |= PCD8544_DC_Pin;
+  }
+  else{
+    PCD8544_DC_Port->ODR &= ~PCD8544_DC_Pin;
+  }
+}
+
+void PCD8544_PL_BacklightPin(bool state){
+  if(state){
+    PCD8544_BK_Port->ODR |= PCD8544_BK_Pin;
+  }
+  else{
+    PCD8544_BK_Port->ODR &= ~PCD8544_BK_Pin;
+  }
+}
+
+uint8_t PCD8544_PL_SPI_Transfer(uint8_t byte){
+  register unsigned char mask = 0x80;
+  
+  while(mask){
+    if(byte & mask){
+      PCD8544_MOSI_Port->ODR |= PCD8544_MOSI_Pin;
+    }
+    else{
+      PCD8544_MOSI_Port->ODR &= (~PCD8544_MOSI_Pin);
+    }
+    PCD8544_CLK_Port->ODR |= PCD8544_CLK_Pin;
+    mask >>= 1;
+    PCD8544_CLK_Port->ODR &= (~PCD8544_CLK_Pin);
+  }
+  PCD8544_MOSI_Port->ODR &= (~PCD8544_MOSI_Pin);
+  
+  return 0;
+}
+
+void PCD8544_PL_Delay(uint16_t milliseconds){
+  delay(milliseconds);
+}
