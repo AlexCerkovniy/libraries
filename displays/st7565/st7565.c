@@ -46,7 +46,7 @@ void ST7565_Init(void){
     _sendSpiCommand(CMD_SET_POWER_CONTROL); // All flags is reset
 
     ST7565_PL_CS_Pin(true);
-    ST7565_PL_Delay(50);
+    ST7565_PL_Delay(5);
     ST7565_Update();
 }
 

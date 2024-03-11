@@ -15,6 +15,7 @@ extern const gfx8_bitmap_t humidity_icon;
 extern const gfx8_bitmap_t co2_icon;
 extern const gfx8_bitmap_t backlight_icon;
 extern const gfx8_bitmap_t antenna_icon;
+extern const gfx8_bitmap_t malfunction_icon;
 
 #endif
 
