@@ -203,6 +203,7 @@ void bvna_tick(uint32_t period){
 
 void bvna_start_registration(uint8_t device_id, uint8_t device_type){
 	bvna.wait_timer = 0;
+	bvna.timeout_timer = 0;
 	bvna.retries = 0;
 	bvna.state = BVNA_STATE_REGISTRATION;
 	bvna.substate = BVNA_SUBSTATE_WAIT_REG_REQUEST;
@@ -213,9 +214,16 @@ void bvna_start_registration(uint8_t device_id, uint8_t device_type){
 			bvna.reg_repeater_id, bvna.reg_device_id, bvna.reg_device_type);
 
 	/* Start/wait registration request at BVNA_BASE_FREQ_HZ */
-	sx127x_lora_set_op_mode(&ra01, RFLR_OPMODE_SYNTHESIZER_RX);
-	sx127x_lora_set_rf_frequency(&ra01, BVNA_BASE_FREQ_HZ);
 	sx127x_lora_start_rx(&ra01);
+}
+
+void bvna_stop_registration(void){
+	bvna.state = BVNA_STATE_POLLING;
+	bvna.substate = BVNA_SUBSTATE_WAIT_COMMAND;
+	bvna.wait_timer = BVNA_RADIO_POLLING_MS;
+	bvna.timeout_timer = 0;
+	bvna.retries = 0;
+	BVNA_LOG("Registration stopped\r\n");
 }
 
 bvna_device_t *bvna_get_device_status(uint8_t device_id){
@@ -267,7 +275,7 @@ static void bvna_registration_process(void){
 				/* Registration request not received, return to polling state */
 				bvna.state = BVNA_STATE_POLLING;
 				bvna.substate = BVNA_SUBSTATE_REQ_STATUS;
-				bvna.wait_timer = BVNA_DEVICE_POLLING_MS;
+				bvna.wait_timer = BVNA_RADIO_POLLING_MS;
 				BVNA_LOG("Registration timeout. Go to polling...\r\n");
 				bvna_registration_timeout_callback();
 			}

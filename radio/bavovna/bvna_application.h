@@ -96,6 +96,7 @@ void bvna_tick(uint32_t period);
 /* Registration process start routine */
 #if defined(BVNA_DEVICE_HUB)
 	void bvna_start_registration(uint8_t device_id, uint8_t device_type);
+	void bvna_stop_registration(void);
 	bvna_device_t *bvna_get_device_status(uint8_t device_id);
 	bvna_device_t *bvna_get_repeater_status(uint8_t repeater_id);
 #elif defined(BVNA_DEVICE_SLAVE)
