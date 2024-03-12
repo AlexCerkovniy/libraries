@@ -107,8 +107,10 @@ void bvna_init(void){
 			bvna.repeater[id].available = true;
 			bvna.repeater[id].offline = true;
 			bvna.repeater[id].poll_timer = 0;
+			bvna.repeater[id].losts = 0;
 			BVNA_LOG("Repeater #%u reg. data recovered\r\n", id + 1);
 		} else {
+			bvna.repeater[id].available = false;
 			BVNA_LOG("Repeater #%u reg. data empty\r\n", id + 1);
 		}
 	}
@@ -121,8 +123,10 @@ void bvna_init(void){
 			bvna.device[id].offline = true;
 			bvna.device[id].selected = false;
 			bvna.device[id].poll_timer = 0;
+			bvna.device[id].losts = 0;
 			BVNA_LOG("Device #%u reg. data recovered\r\n", id + 1);
 		} else {
+			bvna.device[id].available = false;
 			BVNA_LOG("Device #%u reg. data empty\r\n", id + 1);
 		}
 	}
@@ -340,6 +344,7 @@ static void bvna_registration_process(void){
 						device->battery_soc = status_data->battery_soc;
 						device->temperature_c = status_data->temperature_c;
 						device->rssi = ra01.rssi;
+						device->freq_error_hz = ra01.freq_error;
 
 						/* Save device data in NVRAM */
 						device_nvram->dev_type = bvna.reg_device_type;
@@ -460,6 +465,8 @@ static void bvna_polling_process(void){
 					device->temperature_c = status_data->temperature_c;
 					device->poll_timer = BVNA_REPEATER_POLLING_MS;
 					device->offline = false;
+					device->rssi = ra01.rssi;
+					device->freq_error_hz = ra01.freq_error;
 
 					/* Go to status request sub-state */
 					bvna.substate = BVNA_SUBSTATE_REQ_STATUS;
@@ -481,7 +488,10 @@ static void bvna_polling_process(void){
 			bvna.timeout_timer += BVNA_RADIO_POLLING_MS;
 			if(bvna.timeout_timer > BVNA_MAX_ANSWER_TIMEOUT_MS){
 				if(++bvna.retries >= BVNA_REPEATER_PING_LOSTS_FOR_OFFLINE){
-					bvna.repeater[bvna.poll_repeater_id - 1].offline = true;
+					if(bvna.repeater[bvna.poll_repeater_id - 1].offline == false){
+						bvna.repeater[bvna.poll_repeater_id - 1].offline = true;
+						bvna.repeater[bvna.poll_repeater_id - 1].losts++;
+					}
 					bvna.repeater[bvna.poll_repeater_id - 1].poll_timer = BVNA_REPEATER_POLLING_MS;
 					bvna.retries = 0;
 					BVNA_LOG("Status request answer timeout. Device offline\r\n");

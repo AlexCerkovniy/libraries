@@ -59,6 +59,8 @@ typedef struct{
 	uint16_t battery_soc;
 	int8_t temperature_c;
 	int8_t rssi;
+	uint16_t freq_error_hz;
+	uint32_t losts;
 
 	/* Private data */
 	uint16_t poll_timer;
