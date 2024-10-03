@@ -1,27 +1,5 @@
 #include "adxl345.h"
 
-//uint8_t data_rec[6];
-//uint8_t chipid=0;
-//char x_char[3], y_char[3], z_char[3];
-
-//void adxl345_write (uint8_t reg, uint8_t value)
-//{
-////	uint8_t data[2];
-////	data[0] = reg;
-////	data[1] = value;
-////	HAL_I2C_Master_Transmit (&hi2c1, adxl_address, data, 2, 100);
-//}
-//
-//void adxl345_read_values (uint8_t reg)
-//{
-////	HAL_I2C_Mem_Read (&hi2c1, adxl_address, reg, 1, (uint8_t *)data_rec, 6, 100);
-//}
-//
-//void adxl345_read_address (uint8_t reg)
-//{
-//	//HAL_I2C_Mem_Read (&hi2c1, adxl_address, reg, 1, &chipid, 1, 100);
-//}
-
 void adxl345_init(adxl345_t *adxl){
 	uint8_t tmp = 0;
 
@@ -30,16 +8,23 @@ void adxl345_init(adxl345_t *adxl){
 
 	/* Configuration */
 	adxl->driver.read(adxl->i2c_address, DEVID, &adxl->device_id, 1);
-	tmp = adxl->range;
+	tmp = adxl->range | adxl->resolution;
 	adxl->driver.write(adxl->i2c_address, DATA_FORMAT, &tmp, 1);
+	tmp = ADXL_LP_DATA_RATE_100HZ;
+	adxl->driver.write(adxl->i2c_address, BW_RATE, &tmp, 1);
 
+	/* Start measurement */
+	tmp = ADXL_PWR_CTRL_MEASUREMENT_EN | ADXL_PWR_CTRL_SLEEP_SAMPLING_8HZ;
+	adxl->driver.write(adxl->i2c_address, POWER_CTL, &tmp, 1);
+}
 
+void adxl345_read_axis_data(adxl345_t *adxl, adxl345_axis_data_t *data){
+	uint8_t buffer[6];
 
-//
-//	adxl_write (0x31, 0x01);  // data_format range= +- 4g
-//	adxl_write (0x2d, 0x00);  // reset all bits
-//	adxl_write (0x2d, 0x08);  // power_cntl measure and wake up 8hz
-
+	adxl->driver.read(adxl->i2c_address, DATAX0, buffer, 6);
+	data->x = ((int16_t)buffer[1] << 8) | (int16_t)buffer[0];
+	data->y = ((int16_t)buffer[3] << 8) | (int16_t)buffer[2];
+	data->z = ((int16_t)buffer[5] << 8) | (int16_t)buffer[4];
 }
 
 int16_t adxl345_readx(adxl345_t *adxl)
