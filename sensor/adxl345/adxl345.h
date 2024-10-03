@@ -1,17 +1,24 @@
-#include "main.h"
+#pragma once
 
-//Adxl345 Device Address 
-#define adxl_address 0x53<<1
+#include <stdint.h>
+#include <stdbool.h>
 
-//Set i2c Handeler here
-extern I2C_HandleTypeDef hi2c1;
+#include "adxl345_registers.h"
 
+typedef struct{
+	void (*init)(void);
+	void (*reset)(bool set);
+	void (*read)(uint8_t address, uint8_t reg, uint8_t *buffer, uint8_t length);
+	void (*write)(uint8_t address, uint8_t reg, uint8_t *buffer, uint8_t length);
+	void (*delay_ms)(uint32_t ms);
+} adxl345_driver_t;
 
+typedef struct {
+	adxl345_driver_t driver;
+	uint8_t i2c_address;
+} adxl345_t;
 
-void adxl_write (uint8_t reg, uint8_t value);
-void adxl_read_values (uint8_t reg);
-void adxl_read_address (uint8_t reg);
-void adxl_init (void);
-int16_t adxl_readx(void);
-int16_t adxl_ready(void);
-int16_t adxl_readz(void);
+void adxl345_init(adxl345_t *adxl);
+int16_t adxl345_readx(adxl345_t *adxl);
+int16_t adxl345_ready(adxl345_t *adxl);
+int16_t adxl345_readz(adxl345_t *adxl);
