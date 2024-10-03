@@ -28,11 +28,13 @@ void adxl345_init(adxl345_t *adxl){
 	/* Initialize driver */
 	adxl->driver.init();
 
-	/* Read device ID */
-	adxl->driver.read(adxl->i2c_address, DEVID, &tmp, 1);
+	/* Configuration */
+	adxl->driver.read(adxl->i2c_address, DEVID, &adxl->device_id, 1);
+	tmp = adxl->range;
+	adxl->driver.write(adxl->i2c_address, DATA_FORMAT, &tmp, 1);
 
 
-//	adxl_read_address (0x00); // read the DEVID
+
 //
 //	adxl_write (0x31, 0x01);  // data_format range= +- 4g
 //	adxl_write (0x2d, 0x00);  // reset all bits

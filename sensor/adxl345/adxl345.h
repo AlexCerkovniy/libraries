@@ -16,6 +16,9 @@ typedef struct{
 typedef struct {
 	adxl345_driver_t driver;
 	uint8_t i2c_address;
+	uint8_t device_id;
+
+	adxl345_range_t range;
 } adxl345_t;
 
 void adxl345_init(adxl345_t *adxl);

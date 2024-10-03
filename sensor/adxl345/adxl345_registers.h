@@ -79,3 +79,10 @@
 
 #define LINKMODEON  1
 #define LINKMODEOFF 0
+
+typedef enum {
+	ADXL_RANGE_2G 	= 0,
+	ADXL_RANGE_4G 	= (1 << 0),
+	ADXL_RANGE_8G 	= (1 << 1),
+	ADXL_RANGE_16G 	= (1 << 2),
+}adxl345_range_t;
