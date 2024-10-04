@@ -10,8 +10,7 @@ void adxl345_init(adxl345_t *adxl){
 	adxl->driver.read(adxl->i2c_address, DEVID, &adxl->device_id, 1);
 	tmp = adxl->range | adxl->resolution;
 	adxl->driver.write(adxl->i2c_address, DATA_FORMAT, &tmp, 1);
-	tmp = ADXL_LP_DATA_RATE_100HZ;
-	adxl->driver.write(adxl->i2c_address, BW_RATE, &tmp, 1);
+	adxl->driver.write(adxl->i2c_address, BW_RATE, (uint8_t *)&adxl->data_rate, 1);
 
 	/* Start measurement */
 	tmp = ADXL_PWR_CTRL_MEASUREMENT_EN | ADXL_PWR_CTRL_SLEEP_SAMPLING_8HZ;
