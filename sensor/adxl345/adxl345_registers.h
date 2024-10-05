@@ -150,4 +150,13 @@ typedef enum {
 	ADXL_INT_OVERRUN_FLAG 		= (1 << 0)
 } adxl345_int_flags_t;
 
+typedef enum {
+	ADXL_FIFO_MODE_BYPASS				= (0 << 6),
+	ADXL_FIFO_MODE_FIFO					= (1 << 6),
+	ADXL_FIFO_MODE_STREAM				= (2 << 6),
+	ADXL_FIFO_MODE_TRIGGER				= (3 << 6)
+} adxl345_fifo_mode_t;
+
+#define ADXL_FIFO_CTL_MODE_MASK			(0xC0)
+#define ADXL_FIFO_CTL_SAMPLES_MASK		(0x1F)
 
