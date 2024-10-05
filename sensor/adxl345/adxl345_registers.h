@@ -127,3 +127,27 @@ typedef enum {
 	ADXL_LP_DATA_RATE_200HZ 	= (0x1B),
 	ADXL_LP_DATA_RATE_400HZ 	= (0x1C),
 } adxl345_data_rate_t;
+
+typedef enum {
+	ADXL_INT_MAP_DATA_READY_FLAG 	= (1 << 7),
+	ADXL_INT_MAP_SINGLE_TAP_FLAG 	= (1 << 6),
+	ADXL_INT_MAP_DOUBLE_TAPY_FLAG 	= (1 << 5),
+	ADXL_INT_MAP_ACTIVITY_FLAG 		= (1 << 4),
+	ADXL_INT_MAP_INACTIVITY_FLAG 	= (1 << 3),
+	ADXL_INT_MAP_FREE_FALL_FLAG 	= (1 << 2),
+	ADXL_INT_MAP_WATERMARK_FLAG 	= (1 << 1),
+	ADXL_INT_MAP_OVERRUN_FLAG 		= (1 << 0)
+} adxl345_int_map_flags_t;
+
+typedef enum {
+	ADXL_INT_DATA_READY_FLAG 	= (1 << 7),
+	ADXL_INT_SINGLE_TAP_FLAG 	= (1 << 6),
+	ADXL_INT_DOUBLE_TAPY_FLAG 	= (1 << 5),
+	ADXL_INT_ACTIVITY_FLAG 		= (1 << 4),
+	ADXL_INT_INACTIVITY_FLAG 	= (1 << 3),
+	ADXL_INT_FREE_FALL_FLAG 	= (1 << 2),
+	ADXL_INT_WATERMARK_FLAG 	= (1 << 1),
+	ADXL_INT_OVERRUN_FLAG 		= (1 << 0)
+} adxl345_int_flags_t;
+
+

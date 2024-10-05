@@ -21,6 +21,9 @@ typedef struct {
 	adxl345_range_t range;
 	adxl345_resolution_t resolution;
 	adxl345_data_rate_t data_rate;
+
+	uint8_t int_map;
+	uint8_t int_enable;
 } adxl345_t;
 
 typedef struct {
@@ -29,6 +32,15 @@ typedef struct {
 
 void adxl345_init(adxl345_t *adxl);
 void adxl345_read_axis_data(adxl345_t *adxl, adxl345_axis_data_t *data);
-int16_t adxl345_readx(adxl345_t *adxl);
-int16_t adxl345_ready(adxl345_t *adxl);
-int16_t adxl345_readz(adxl345_t *adxl);
+
+/* INT_MAP register methods */
+uint8_t adxl345_int_map_get(adxl345_t *adxl);
+void adxl345_int_map_write(adxl345_t *adxl, uint8_t value);
+void adxl345_int_map_set(adxl345_t *adxl, uint8_t mask);
+void adxl345_int_map_clear(adxl345_t *adxl, uint8_t mask);
+
+/* INT_EN register methods */
+uint8_t adxl345_int_config_get(adxl345_t *adxl);
+void adxl345_int_config_write(adxl345_t *adxl, uint8_t value);
+void adxl345_int_config_set(adxl345_t *adxl, uint8_t mask);
+void adxl345_int_config_clear(adxl345_t *adxl, uint8_t mask);
