@@ -11,6 +11,16 @@ void adxl345_init(adxl345_t *adxl){
 	/* Initialize driver */
 	adxl->driver.init();
 
+	/* Set defaults */
+	tmp = 0;
+	adxl->driver.write(adxl->i2c_address, POWER_CTL, &tmp, 1);
+	adxl->driver.write(adxl->i2c_address, DATA_FORMAT, &tmp, 1);
+	adxl->driver.write(adxl->i2c_address, FIFO_CTL, &tmp, 1);
+	adxl->driver.write(adxl->i2c_address, INT_MAP, &tmp, 1);
+	adxl->driver.write(adxl->i2c_address, INT_ENABLE, &tmp, 1);
+	adxl->driver.read(adxl->i2c_address, INT_SOURCE, &tmp, 1);
+	adxl345_read_axis_data(adxl, NULL);
+
 	/* Configuration */
 	adxl->driver.read(adxl->i2c_address, DEVID, &adxl->device_id, 1);
 	adxl->data_format_reg = adxl->range | adxl->resolution;
@@ -20,7 +30,6 @@ void adxl345_init(adxl345_t *adxl){
 	adxl->driver.write(adxl->i2c_address, FIFO_CTL, &adxl->fifo_ctl_reg, 1);
 	adxl->driver.write(adxl->i2c_address, INT_MAP, &adxl->int_map_reg, 1);
 	adxl->driver.write(adxl->i2c_address, INT_ENABLE, &adxl->int_enable_reg, 1);
-	adxl->driver.read(adxl->i2c_address, INT_SOURCE, &tmp, 1);
 
 	/* Start measurement */
 	adxl->power_ctl_reg = ADXL_PWR_CTRL_MEASUREMENT_EN | ADXL_PWR_CTRL_SLEEP_SAMPLING_8HZ;
@@ -37,9 +46,11 @@ void adxl345_read_axis_data(adxl345_t *adxl, adxl345_axis_data_t *data){
 	uint8_t buffer[6];
 
 	adxl->driver.read(adxl->i2c_address, DATAX0, buffer, 6);
-	data->x = ((int16_t)buffer[1] << 8) | (int16_t)buffer[0];
-	data->y = ((int16_t)buffer[3] << 8) | (int16_t)buffer[2];
-	data->z = ((int16_t)buffer[5] << 8) | (int16_t)buffer[4];
+	if(data){
+		data->x = ((int16_t)buffer[1] << 8) | (int16_t)buffer[0];
+		data->y = ((int16_t)buffer[3] << 8) | (int16_t)buffer[2];
+		data->z = ((int16_t)buffer[5] << 8) | (int16_t)buffer[4];
+	}
 }
 
 /**
