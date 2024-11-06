@@ -45,9 +45,7 @@ uint16_t sx127x_lora_init(sx127x_lora_t* sx){
 	/* Set TX power & OCP */
 	sx127x_lora_set_pa_output(sx, sx->power_output);
 	sx127x_lora_set_rf_power(sx, sx->power);
-	if(sx->over_current_protection){
-		sx127x_lora_set_ocp(sx, sx->over_current_protection);
-	}
+	sx127x_lora_set_ocp(sx, sx->over_current_protection);
 
 	/* Set RX gain */
 	if(sx->rx_gain){
@@ -435,18 +433,34 @@ void sx127x_lora_set_rx_gain(sx127x_lora_t* sx, uint8_t gain){
 void sx127x_lora_set_ocp(sx127x_lora_t* sx, uint8_t current){
 	uint8_t	ocp_trim;
 
-	if(current < 45)
-		current = 45;
-	if(current > 240)
-		current = 240;
+	if(current == 0){
+		ocp_trim = 0;
+		sx->driver.write(REG_LR_OCP | 0x80, &ocp_trim, 1);
+		return;
+	}
 
-	if(current <= 120)
-		ocp_trim = (current - 45)/5;
-	else if(current <= 240)
-		ocp_trim = (current + 30)/10;
+	if(current){
+		if(current < 45){
+			current = 45;
+		}
+		else if(current > 240){
+			current = 240;
+		}
 
-	/* Enable OCP */
-	ocp_trim |= RFLR_OCP_ON;
+		if(current <= 120){
+			ocp_trim = (current - 45)/5;
+		}
+		else if(current <= 240){
+			ocp_trim = (current + 30)/10;
+		}
+
+
+		/* Enable OCP */
+		ocp_trim |= RFLR_OCP_ON;
+	}
+	else{
+		ocp_trim = 0;
+	}
 
 	sx->driver.write(REG_LR_OCP | 0x80, &ocp_trim, 1);
 }
