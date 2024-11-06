@@ -296,7 +296,7 @@ void sx127x_lora_set_coding_rate(sx127x_lora_t* sx, uint8_t coding_rate){
  * \param [IN] sx - module object
  * \param [IN] output - RFLR_PACONFIG_PASELECT_RFO or RFLR_PACONFIG_PASELECT_PABOOST
  */
-void sx127x_lora_set_pa_output(sx127x_lora_t* sx, int8_t output){
+void sx127x_lora_set_pa_output(sx127x_lora_t* sx, uint8_t output){
 	uint8_t data;
 	sx->driver.read(REG_LR_PACONFIG, &data, 1);
 	data = (data & RFLR_PACONFIG_PASELECT_MASK) | (output & (~RFLR_PACONFIG_PASELECT_MASK));
@@ -315,11 +315,8 @@ void sx127x_lora_set_rf_power(sx127x_lora_t* sx, int8_t power){
 	/* Read REG_LR_PACONFIG & REG_LR_PADAC values from chip */
 	sx->driver.read(REG_LR_PACONFIG, &pa_config, 1);
 
-	/* Set max power limit to the max */
-	pa_config |= 0x70;
-
 	/* Set-up power according to policies */
-	if((pa_config & RFLR_PACONFIG_PASELECT_PABOOST) == RFLR_PACONFIG_PASELECT_PABOOST){
+	if(pa_config & RFLR_PACONFIG_PASELECT_PABOOST){
 		sx->driver.read(REG_LR_PADAC, &pa_dac, 1);
 
 		/* +20dBm PA control */
@@ -356,6 +353,9 @@ void sx127x_lora_set_rf_power(sx127x_lora_t* sx, int8_t power){
 		}
 	}
 	else {
+		/* Set max power limit to the max */
+		pa_config |= 0x70;
+
 		if(power < -1){
 			power = -1;
 		}
@@ -391,6 +391,23 @@ void sx127x_lora_set_rx_auto_gain_control(sx127x_lora_t* sx, bool set){
 		}
 		sx->driver.write(REG_LR_MODEMCONFIG3 | 0x80, &data, 1);
 	}
+}
+
+/*!
+ * \brief Enable/disable LNA boost. High Frequency (RFI_HF) LNA current
+ * 			adjustment - boost on, 150% LNA current.
+ *
+ * \param [IN] sx - module object
+ * \param [IN] state - [true] for enable boost, [false] for disable.
+ */
+void sx127x_lora_set_lna_boost(sx127x_lora_t* sx, bool state){
+	uint8_t data;
+	sx->driver.read(REG_LR_LNA, &data, 1);
+	data &= RFLR_LNA_BOOST_HF_MASK;
+	if(state){
+		data |= RFLR_LNA_BOOST_HF_ON;
+	}
+	sx->driver.write(REG_LR_LNA | 0x80, &data, 1);
 }
 
 /*!

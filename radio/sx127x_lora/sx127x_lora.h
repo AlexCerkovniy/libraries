@@ -45,7 +45,7 @@ typedef struct{
 	sx127x_driver_t	driver;
 
 	/* Parameters */
-	int 			frequency;					/* Set in Hz */
+	uint32_t 		frequency;					/* Set in Hz */
 	uint8_t			spreding_factor;			/* See in registers list, default: RFLR_MODEMCONFIG2_SF_7 */
 	uint8_t			bandwidth;					/* See in registers list, default: RFLR_MODEMCONFIG1_BW_125_KHZ */
 	uint8_t			coding_rate;				/* See in registers list, default: RFLR_MODEMCONFIG1_CODINGRATE_4_6 */
@@ -77,9 +77,10 @@ uint8_t sx127x_lora_transmit(sx127x_lora_t* sx, uint8_t* data, uint8_t length, u
 /* General SX127x functions */
 void sx127x_lora_set_op_mode(sx127x_lora_t* sx, uint8_t mode);
 void sx127x_lora_set_rf_frequency(sx127x_lora_t* sx, uint32_t freq);
-void sx127x_lora_set_pa_output(sx127x_lora_t* sx, int8_t output);
+void sx127x_lora_set_pa_output(sx127x_lora_t* sx, uint8_t output);
 void sx127x_lora_set_rf_power(sx127x_lora_t* sx, int8_t power);
 void sx127x_lora_set_rx_auto_gain_control(sx127x_lora_t* sx, bool set);
+void sx127x_lora_set_lna_boost(sx127x_lora_t* sx, bool state);
 void sx127x_lora_set_rx_gain(sx127x_lora_t* sx, uint8_t gain);
 void sx127x_lora_set_bandwidth(sx127x_lora_t* sx, uint8_t bandwidth);
 void sx127x_lora_set_coding_rate(sx127x_lora_t* sx, uint8_t coding_rate);
