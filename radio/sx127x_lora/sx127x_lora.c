@@ -2,6 +2,37 @@
 
 static const uint32_t bw_table_hz[] = {7800, 10400, 15600, 20800, 31250, 41700, 62500, 125000, 250000, 500000};
 
+struct {
+	uint8_t reg_frf_msb;
+	uint8_t reg_frf_mid;
+	uint8_t reg_frf_lsb;
+	uint8_t reg_sync_word;
+	uint8_t mode_config_1;
+	uint8_t mode_config_2;
+	uint8_t mode_config_3;
+	uint8_t reg_lna;
+	uint8_t reg_pa_config;
+	uint8_t reg_pa_dac;
+	uint8_t reg_ocp;
+} dump_registers;
+
+void sx127x_dump_registers(sx127x_lora_t* sx){
+	sx->driver.read(REG_LR_FRFMSB, &dump_registers.reg_frf_msb, 1);
+	sx->driver.read(REG_LR_FRFMID, &dump_registers.reg_frf_mid, 1);
+	sx->driver.read(REG_LR_FRFLSB, &dump_registers.reg_frf_lsb, 1);
+	sx->driver.read(REG_LR_SYNCWORD, &dump_registers.reg_sync_word, 1);
+	sx->driver.read(REG_LR_MODEMCONFIG1, &dump_registers.mode_config_1, 1);
+	sx->driver.read(REG_LR_MODEMCONFIG2, &dump_registers.mode_config_2, 1);
+	sx->driver.read(REG_LR_MODEMCONFIG3, &dump_registers.mode_config_3, 1);
+	sx->driver.read(REG_LR_LNA, &dump_registers.reg_lna, 1);
+	sx->driver.read(REG_LR_PACONFIG, &dump_registers.reg_pa_config, 1);
+	sx->driver.read(REG_LR_PADAC, &dump_registers.reg_pa_dac, 1);
+	sx->driver.read(REG_LR_OCP, &dump_registers.reg_ocp, 1);
+
+	sx->driver.delay_ms(3);
+	sx->driver.delay_ms(3);
+}
+
 /*!
  * \brief Initializes the SX1276
  *
@@ -45,9 +76,7 @@ uint16_t sx127x_lora_init(sx127x_lora_t* sx){
 	/* Set TX power & OCP */
 	sx127x_lora_set_pa_output(sx, sx->power_output);
 	sx127x_lora_set_rf_power(sx, sx->power);
-	if(sx->over_current_protection){
-		sx127x_lora_set_ocp(sx, sx->over_current_protection);
-	}
+	sx127x_lora_set_ocp(sx, sx->over_current_protection);
 
 	/* Set RX gain */
 	if(sx->rx_gain){
@@ -296,7 +325,7 @@ void sx127x_lora_set_coding_rate(sx127x_lora_t* sx, uint8_t coding_rate){
  * \param [IN] sx - module object
  * \param [IN] output - RFLR_PACONFIG_PASELECT_RFO or RFLR_PACONFIG_PASELECT_PABOOST
  */
-void sx127x_lora_set_pa_output(sx127x_lora_t* sx, int8_t output){
+void sx127x_lora_set_pa_output(sx127x_lora_t* sx, uint8_t output){
 	uint8_t data;
 	sx->driver.read(REG_LR_PACONFIG, &data, 1);
 	data = (data & RFLR_PACONFIG_PASELECT_MASK) | (output & (~RFLR_PACONFIG_PASELECT_MASK));
@@ -315,11 +344,8 @@ void sx127x_lora_set_rf_power(sx127x_lora_t* sx, int8_t power){
 	/* Read REG_LR_PACONFIG & REG_LR_PADAC values from chip */
 	sx->driver.read(REG_LR_PACONFIG, &pa_config, 1);
 
-	/* Set max power limit to the max */
-	pa_config |= 0x70;
-
 	/* Set-up power according to policies */
-	if((pa_config & RFLR_PACONFIG_PASELECT_PABOOST) == RFLR_PACONFIG_PASELECT_PABOOST){
+	if(pa_config & RFLR_PACONFIG_PASELECT_PABOOST){
 		sx->driver.read(REG_LR_PADAC, &pa_dac, 1);
 
 		/* +20dBm PA control */
@@ -356,6 +382,9 @@ void sx127x_lora_set_rf_power(sx127x_lora_t* sx, int8_t power){
 		}
 	}
 	else {
+		/* Set max power limit to the max */
+		pa_config |= 0x70;
+
 		if(power < -1){
 			power = -1;
 		}
@@ -394,6 +423,23 @@ void sx127x_lora_set_rx_auto_gain_control(sx127x_lora_t* sx, bool set){
 }
 
 /*!
+ * \brief Enable/disable LNA boost. High Frequency (RFI_HF) LNA current
+ * 			adjustment - boost on, 150% LNA current.
+ *
+ * \param [IN] sx - module object
+ * \param [IN] state - [true] for enable boost, [false] for disable.
+ */
+void sx127x_lora_set_lna_boost(sx127x_lora_t* sx, bool state){
+	uint8_t data;
+	sx->driver.read(REG_LR_LNA, &data, 1);
+	data &= RFLR_LNA_BOOST_HF_MASK;
+	if(state){
+		data |= RFLR_LNA_BOOST_HF_ON;
+	}
+	sx->driver.write(REG_LR_LNA | 0x80, &data, 1);
+}
+
+/*!
  * \brief Set RX gain
  *
  * \param [IN] sx - module object
@@ -418,18 +464,34 @@ void sx127x_lora_set_rx_gain(sx127x_lora_t* sx, uint8_t gain){
 void sx127x_lora_set_ocp(sx127x_lora_t* sx, uint8_t current){
 	uint8_t	ocp_trim;
 
-	if(current < 45)
-		current = 45;
-	if(current > 240)
-		current = 240;
+	if(current == 0){
+		ocp_trim = 0;
+		sx->driver.write(REG_LR_OCP | 0x80, &ocp_trim, 1);
+		return;
+	}
 
-	if(current <= 120)
-		ocp_trim = (current - 45)/5;
-	else if(current <= 240)
-		ocp_trim = (current + 30)/10;
+	if(current){
+		if(current < 45){
+			current = 45;
+		}
+		else if(current > 240){
+			current = 240;
+		}
 
-	/* Enable OCP */
-	ocp_trim |= RFLR_OCP_ON;
+		if(current <= 120){
+			ocp_trim = (current - 45)/5;
+		}
+		else if(current <= 240){
+			ocp_trim = (current + 30)/10;
+		}
+
+
+		/* Enable OCP */
+		ocp_trim |= RFLR_OCP_ON;
+	}
+	else{
+		ocp_trim = 0;
+	}
 
 	sx->driver.write(REG_LR_OCP | 0x80, &ocp_trim, 1);
 }
