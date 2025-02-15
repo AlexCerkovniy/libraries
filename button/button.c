@@ -47,7 +47,7 @@ void BTN_Main(button_t *button){
                 }
 
                 if(button->callback){
-                    button->callback(BTN_STATE_UPDATED);
+                    button->callback(button->id, BTN_STATE_UPDATED);
                 }
             }
             else{
@@ -65,7 +65,7 @@ void BTN_Main(button_t *button){
                 button->timer = button->debounce_ms;
 
                 if(button->callback){
-                    button->callback(BTN_SHORT_PRESS);
+                    button->callback(button->id, BTN_SHORT_PRESS);
                 }
                 break;
             }
@@ -74,7 +74,7 @@ void BTN_Main(button_t *button){
                 button->status = BTN_IDLE;
 
                 if(button->callback){
-                    button->callback(BTN_LONG_PRESS);
+                    button->callback(button->id, BTN_LONG_PRESS);
                 }
             }
             break;
@@ -99,6 +99,6 @@ bool BTN_IsPressed(button_t *button){
 }
 
 /* Callback register */
-void BTN_RegisterCallback(button_t *button, void (*callback)(button_callback_event_t event)){
+void BTN_RegisterCallback(button_t *button, void (*callback)(uint8_t button_id, button_callback_event_t event)){
     button->callback = callback;
 }
